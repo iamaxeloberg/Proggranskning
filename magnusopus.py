@@ -18,18 +18,22 @@ class Player:
         if won:  # Om spelaren vinner, öka antalet vinster
             self.wins += 1
 
+    def __str__(self):
+        # Formaterar spelarens data för att skriva till fil
+        return f"{self.name}\n{self.serve_win_prob}\n{self.wins}\n{self.matches}"
+
     @staticmethod
     def read_players_from_file(filename):
         # Läser spelarens data från en fil, där varje spelare har fyra rader information
         players = []
         with open(filename, "r") as f:
-            lines = f.read().strip().split("\n")  # Strippar bort tomma rader och delar upp texten i listor
-            for i in range(0, len(lines), 4):  # Itererar över varje spelare (4 rader per spelare)
+            lines = f.read().strip().split("\n")
+            for i in range(0, len(lines), 4):
                 name = lines[i].strip()
                 serve_win_prob = float(lines[i + 1].strip())
                 wins = int(lines[i + 2].strip())
                 matches = int(lines[i + 3].strip())
-                players.append(Player(name, serve_win_prob, wins, matches))  # Skapar Player-objekt
+                players.append(Player(name, serve_win_prob, wins, matches))
         return players
 
     @staticmethod
@@ -37,7 +41,7 @@ class Player:
         # Skriver spelarens uppdaterade data tillbaka till filen
         with open(filename, "w") as f:
             for player in players:
-                f.write(str(player) + "\n")  # Använder __str__ för att formatera data
+                f.write(str(player) + "\n")
 
 class Match:
     def __init__(self, player1, player2):
@@ -46,34 +50,48 @@ class Match:
 
     def update_match_result(self, winner_name):
         # Uppdaterar resultatet för båda spelarna beroende på vem som vann
-        if self.player1.name == winner_name:  # Om spelare 1 vann
+        if self.player1.name.lower() == winner_name.lower():
             self.player1.update_result(True)
-            self.player2.update_result(False)  # Spelare 2 förlorar
-        elif self.player2.name == winner_name:  # Om spelare 2 vann
+            self.player2.update_result(False)
+        elif self.player2.name.lower() == winner_name.lower():
             self.player2.update_result(True)
-            self.player1.update_result(False)  # Spelare 1 förlorar
+            self.player1.update_result(False)
+        else:
+            print("Invalid winner name. No updates made.")
 
     @staticmethod
     def display_players(players):
         # Visar en lista med alla spelare och deras statistik
         print("\nAvailable players:")
-        print(f"{'Number':<10} {'Name':<20} {'Wins':<10} {'Matches':<10} {'Win Percentage':<15}") #fördefinerat med f-strängar och justeringsoperatorer
-        for i, player in enumerate(players):  # Loopar igenom spelarna, index i so mbörjar frnå o0, 
+        print(f"{'Number':<10} {'Name':<20} {'Wins':<10} {'Matches':<10} {'Win Percentage':<15}")
+        for i, player in enumerate(players):
             print(f"{i + 1:<10} {player.name:<20} {player.wins:<10} {player.matches:<10} {player.win_percentage():.3f}")
 
     @staticmethod
     def select_player(players, prompt):
-        Match.display_players(players) # Visar spelarna med index
-        index = int(input(prompt)) - 1 # Användaren anger sitt val (1-indexerat)
-        return players[index]
+        while True:
+            try:
+                Match.display_players(players)
+                index = int(input(prompt)) - 1
+                if 0 <= index < len(players):
+                    return players[index]
+                else:
+                    print("Invalid number. Please try again.")
+            except ValueError:
+                print("Please enter a valid number.")
 
     @staticmethod
     def sort_players_by_win_percentage(players):
-        return sorted(players, key=Match.get_win_percentage, reverse=True)
+        # Sorterar spelare baserat på vinstprocent
+        return sorted(players, key=lambda player: player.win_percentage(), reverse=True)
 
 def main():
     filename = "pd.txt"  # Filnamn som innehåller spelarens data
-    players = Player.read_players_from_file(filename)  # Läser spelare från fil
+    try:
+        players = Player.read_players_from_file(filename)  # Läser spelare från fil
+    except FileNotFoundError:
+        print(f"File {filename} not found. Exiting.")
+        return
 
     # Väljer två spelare för en match
     player1 = Match.select_player(players, "\nSelect player 1 by number: ")
@@ -90,7 +108,7 @@ def main():
     # Visar den uppdaterade rankingen
     print("\nUpdated player rankings:")
     print(f"{'Position':<10} {'Name':<20} {'Wins':<10} {'Matches':<10} {'Win Percentage':<15}")
-    for i, player in enumerate(players):  # Visar varje spelares statistik efter sortering
+    for i, player in enumerate(players):
         print(f"{i + 1:<10} {player.name:<20} {player.wins:<10} {player.matches:<10} {player.win_percentage():.3f}")
 
     # Skriver tillbaka den uppdaterade spelarens data till filen
